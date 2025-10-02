@@ -1,0 +1,1 @@
+export default function About(){return (<div><h1>About MAD4x4</h1><p>Mudgee & Districts 4x4 Club is a volunteer-run club for off-road enthusiasts of all skill levels.</p><ul><li>Monthly meetings</li><li>Regular trips and training</li><li>Family-friendly events</li></ul></div>);}

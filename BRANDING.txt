@@ -1,0 +1,9 @@
+Colours:
+- Dark Green: #2F4E35
+- Sunset Orange: #E47B39
+- Neutral Beige: #F7F4ED
+- Charcoal Grey: #3A3A3A
+
+Fonts:
+- Headings: Montserrat Bold
+- Body: Open Sans Regular
