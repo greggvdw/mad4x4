@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Browser client (uses public anon key)
+// Browser client (safe keys)
 export const supabaseBrowser = () =>
   createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-// Server client (can use service role key)
+// Server client (uses service role if present)
 export const supabaseServer = () => {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key =
