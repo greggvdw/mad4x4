@@ -1,1 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';import Stripe from 'stripe';import { supabaseServer } from '../../../lib/supabase';export async function POST(req: NextRequest){const sig=req.headers.get('stripe-signature') as string;const secret=process.env.STRIPE_WEBHOOK_SECRET!;let event:Stripe.Event;try{const stripe=new Stripe(process.env.STRIPE_SECRET_KEY!,{apiVersion:'2024-06-20'});const body=await req.text();event=stripe.webhooks.constructEvent(body,sig,secret);}catch(e:any){return new NextResponse(`Webhook Error: ${e.message}`,{status:400});}const s=supabaseServer();try{if(event.type==='checkout.session.completed'){const session=event.data.object as Stripe.Checkout.Session;const amount_total=session.amount_total||0;await s.from('payments').insert({amount_cents:amount_total,currency:session.currency?.toUpperCase()||'AUD',purpose:'membership_renewal',status:'paid',stripe_session_id:session.id});}}catch(e:any){return new NextResponse(`Processing Error: ${e.message}`,{status:500});}return NextResponse.json({received:true});}
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { supabaseServer } from '../../../lib/supabase';
+
+// Ensure Node runtime and no static optimization
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: NextRequest) {
+  const sig = req.headers.get('stripe-signature') as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  // If you haven't set a webhook secret yet (testing without CLI/Stripe webhook),
+  // exit early so this route doesn't crash when called accidentally.
+  if (!webhookSecret) {
+    return NextResponse.json({ ok: true, skipped: 'No STRIPE_WEBHOOK_SECRET set' });
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
+    // IMPORTANT: raw body for Stripe signature verification
+    const body = await req.text();
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  } catch (e: any) {
+    return new NextResponse(`Webhook Error: ${e.message}`, { status: 400 });
+  }
+
+  const s = supabaseServer();
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const amount_total = session.amount_total || 0;
+
+      await s.from('payments').insert({
+        amount_cents: amount_total,
+        currency: session.currency?.toUpperCase() || 'AUD',
+        purpose: 'membership_renewal',
+        status: 'paid',
+        stripe_session_id: session.id,
+      });
+    }
+  } catch (e: any) {
+    return new NextResponse(`Processing Error: ${e.message}`, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}
