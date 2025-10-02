@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabaseServer } from '../../../lib/supabase';
+import { supabaseServer } from '../../../../lib/supabase';  // fixed path
 
-// Ensure Node runtime and no static optimization
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +9,6 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get('stripe-signature') as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // If you haven't set a webhook secret yet (testing without CLI/Stripe webhook),
-  // exit early so this route doesn't crash when called accidentally.
   if (!webhookSecret) {
     return NextResponse.json({ ok: true, skipped: 'No STRIPE_WEBHOOK_SECRET set' });
   }
@@ -20,7 +17,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
-    // IMPORTANT: raw body for Stripe signature verification
     const body = await req.text();
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (e: any) {
